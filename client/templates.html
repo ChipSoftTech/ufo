@@ -1,0 +1,36 @@
+<template name="layout">
+	<head>
+		<title>UFO</title>
+	</head>
+	<body>
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="/reports">Reports</a></li>
+			<li><a href="/admin">Admin</a></li>
+		</ul>
+
+		{{> yield}}
+	</body>
+</template>
+
+<template name="ufo">
+	<h2>Welcome to UFO! </h2>
+</template>
+
+<template name="reports">
+	<h2>UFO Reports</h2>
+
+	<ul>
+		{{#each reports}}
+			<li class="reports">{{year}} - {{month}}: {{count}}</li>
+		{{/each}}
+	</ul>
+	
+	<button class="morereports">More Reports</button>
+</template>
+
+<template name="admin">
+	<h2>Scrape Data (Update/Add)</h2>
+	<p>Current Status: {{scrapingstatus}}</p>
+	<input type="button" class="scrape" value="Scrape">
+</template>
