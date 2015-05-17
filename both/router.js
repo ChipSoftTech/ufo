@@ -1,8 +1,11 @@
 Router.configure({
-  layoutTemplate: 'layout'
+  layoutTemplate: 'layout',
+  loadingTemplate: 'loading',
+  notFoundTemplate: 'notfound'  
 });
  
-Router.route('/', 'ufo');
-Router.route('/reports', 'reports');
-Router.route('/admin', 'admin');
+Router.route('home', {path: '/'});
+Router.route('reports', {path: '/reports'});
+Router.route('scrape', {path: '/scrape'});
+Router.route('reportdetail', {path: '/reports/:_id'});
 

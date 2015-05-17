@@ -6,7 +6,7 @@ Template.reports.created = function() {
   // http://docs.meteor.com/#deps_autorun
   Deps.autorun(function() {
     Meteor.subscribe('getReports', Session.get('limit'));
-  });
+  }); 
 }
 
 Template.reports.helpers({
@@ -15,13 +15,13 @@ Template.reports.helpers({
   }
 });
 
-Template.admin.created = function() {
+Template.scrape.created = function() {
   Deps.autorun(function() {
     Meteor.subscribe('getSiteInfo');
   });
 }
 
-Template.admin.helpers({
+Template.scrape.helpers({
   scrapingstatus: function() {
 	return SiteInfo.findOne({_id:"scrape"},{fields: {'status':1}}).status;
   }

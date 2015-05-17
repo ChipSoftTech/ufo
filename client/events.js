@@ -6,7 +6,7 @@ Template.reports.events({
   }		
 })
 
-Template.admin.events({
+Template.scrape.events({
 	'click .scrape': function(evt){
 		Meteor.call("scrapeReports", function(error, result) {
 		});

@@ -6,14 +6,28 @@
 		<ul>
 			<li><a href="/">Home</a></li>
 			<li><a href="/reports">Reports</a></li>
-			<li><a href="/admin">Admin</a></li>
+			<li><a href="/scrape">Scrape</a></li>
 		</ul>
 
 		{{> yield}}
 	</body>
 </template>
 
-<template name="ufo">
+<template name="loading">
+	loading...
+</template>
+
+<template name="notfound">
+	Sorry, page not found
+</template>
+
+<template name="scrape">
+	<h2>Scrape Data (Update/Add)</h2>
+	<p>Current Status: {{scrapingstatus}}</p>
+	<input type="button" class="scrape" value="Scrape">
+</template>
+
+<template name="home">
 	<h2>Welcome to UFO! </h2>
 </template>
 
@@ -29,8 +43,6 @@
 	<button class="morereports">More Reports</button>
 </template>
 
-<template name="admin">
-	<h2>Scrape Data (Update/Add)</h2>
-	<p>Current Status: {{scrapingstatus}}</p>
-	<input type="button" class="scrape" value="Scrape">
+<template name="reportdetail">
+	<p>report detail here</p>
 </template>
