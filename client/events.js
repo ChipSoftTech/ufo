@@ -1,6 +1,6 @@
 
-Template.reports.events({
-  'click .morereports': function(evt) {
+Template.home.events({
+  'click .moresightings': function(evt) {
 		newLimit = Session.get('limit') + 10;
 		Session.set('limit', newLimit);
   }		

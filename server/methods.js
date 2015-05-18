@@ -2,23 +2,15 @@ var request = Meteor.npmRequire('request');
 var cheerio = Meteor.npmRequire('cheerio');
 
 Meteor.startup(function () {
-	ReportsList._ensureIndex({
-		"year" : -1,
-		"month" : -1
+	Sightings._ensureIndex({
+		"date" : -1
 	});
 });
 
 function scrapeDetails(error, response, html) {
 	if (!error && response.statusCode == 200) {
-		var $ = cheerio.load(html, 
-		{
-			normalizeWhitespace: false,
-			xmlMode: false,
-			decodeEntities: true
-		});
-		
+		var $ = cheerio.load(html, {normalizeWhitespace: false, xmlMode: false, decodeEntities: true});
 		var params = [ response.request.headers.parent ];
-		
 		
 		$('table > tbody > tr').each(function(i, element){
 			try {			
@@ -38,31 +30,44 @@ function scrapeDetails(error, response, html) {
 				var duration = 	(typeof data[4] === "undefined" ? '' : data[4].trim());
 				var summary = 	(typeof data[5] === "undefined" ? '' : data[5].trim());
 				var posted = 	(typeof data[6] === "undefined" ? '' : data[6].trim());
+				
+				//backfill the long/lat/zip
+				var geo = {};
+				var zip = "";
 
-				ReportsDetails.insert(
+				try {
+					var lookup = Zipcodes.lookupByName(city, state);
+					
+					if(lookup.length != 0)
+					{
+						//Always list coordinates in longitude, latitude order.  Cities have multiple - pick 1st.
+						geo = { type: "Point", coordinates: [ lookup[0].longitude, lookup[0].latitude ] };
+						zip = lookup[0].zip;
+					}	
+				} catch(err) {
+						//continue
+				}					
+
+				Sightings.insert(
 				{	
-					report: params[0],
+					parent: params[0],
 					date: date, 
 					time: time, 
 					city: city, 
-					state: state, 
+					state: state,
+					zip: zip,
+					geo: geo,
 					shape: shape, 
 					duration: duration,
 					summary: summary,
 					summaryref: summaryref,
 					posted: posted
 				});
-			}
-			catch(err) {
+			} catch(err) {
 				console.log("bad table row");				
 				BadData.insert({raw:data, err: err.toString() });			
 			}		
 		}, params);
-		
-		ReportsList.update(params[0], {
-		  $set: {scraped: 1}
-		});
-		
 		
 	} else {
 		console.log("bad detail page");
@@ -75,62 +80,51 @@ function scrapeReports(error, response, html) {
 		if (!error && response.statusCode == 200) {
 			var $ = cheerio.load(html);
 			$('table > tbody > tr').each(function(i, element){
-				
 			  var data = $(this).text().trim().split("\n");
-			  var dates = data[0].split("/");
-			  var month = dates[0].trim();
-			  var year = dates[1].trim(); 
+			  var postdate = data[0];
+			  var dateArray = postdate.split("/");
+			  var month = dateArray[0].trim();
+			  var day = dateArray[1].trim();
+			  var year = dateArray[2].trim(); 
 			  var count = data[1].trim(); 
-			  var id = year + month;
 			  
-			  var doc = ReportsList.findOne(id);
+			  var posted = parseInt(month) + "/" + parseInt(day) + "/" + year.slice(-2);
+			  var countServer = Sightings.find({posted:posted}).count();
+
+			  Info.upsert( "scrape", {status:"Scraping Details: " + postdate} );
 			  
-			  if(doc) {
-				if(count != doc.count) {				
-					ReportsList.upsert(id,{count:count,scraped:0});
-				}
-			  }  else {
-				ReportsList.insert({_id:id,month:month,year:year,count:count,scraped:0});
-			  }
+			  if(count > countServer +1) { //many source counts must include header
+			  	//to avoid doing denial of service dos, sleep for few
+				Meteor._sleepForMs(2000);	
 			  
+				//	http://www.nuforc.org/webreports/ndxp150513.html
+				var targeturl = siteroot + "/" + sitedetails + year.slice(-2) + month + day + ".html";
+				
+				console.log("targeturl: " + targeturl);
+				
+				var options = {
+				  url: targeturl,
+				  headers: {
+					'parent': postdate
+				  }
+				};
+				
+				//remove all to resync
+				Sightings.remove({posted:posted});
+				
+				request(options, Meteor.bindEnvironment(scrapeDetails));
+			  } 
 			});
 		}
 		
-		SiteInfo.upsert( "scrape", {status:"Scraping Details"} );
-
-		//loop over reports that require details to be scraped
-		ReportsList.find({scraped:0},{sort: {year: -1, month: -1}}
-		).forEach(function(obj){
-			console.log("Scraping " + obj._id);
-			SiteInfo.upsert( "scrape", {status:"Scraping: " + obj._id} );
-
-			//	http://www.nuforc.org/webreports/ndxe201505.html
-			var targeturl = siteroot + "/" + sitereportdetails + obj._id + ".html";
-			
-			console.log("targeturl: " + targeturl);
-			
-			var options = {
-			  url: targeturl,
-			  headers: {
-				'parent': obj._id
-			  }
-			};	
-			
-			
-			request(options, Meteor.bindEnvironment(scrapeDetails));
-			
-			//to avoid doing denial of service dos, sleep for few
-			Meteor._sleepForMs(2000);	
-		})
-
-		SiteInfo.upsert( "scrape", {status:"Scraping Done"} );	
+		Info.upsert( "scrape", {status:"Scraping Done"} );	
 		console.log("done scrapeReports")		
 }
 
 Meteor.methods({
 	"scrapeReports" : function () {
-		SiteInfo.upsert( "scrape", {status:"Scraping Started"} );
-		request(siteroot + "/" + sitereports, Meteor.bindEnvironment(scrapeReports));
+		Info.upsert( "scrape", {status:"Scraping Started"} );
+		request(siteroot + "/" + sitepage, Meteor.bindEnvironment(scrapeReports));
 	}
 });	
 

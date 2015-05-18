@@ -5,7 +5,5 @@ Router.configure({
 });
  
 Router.route('home', {path: '/'});
-Router.route('reports', {path: '/reports'});
 Router.route('scrape', {path: '/scrape'});
-Router.route('reportdetail', {path: '/reports/:_id'});
-
+    

@@ -1,5 +1,7 @@
-SiteInfo = new Mongo.Collection('siteinfo');
-ReportsList = new Mongo.Collection('reports');
-ReportsDetails = new Mongo.Collection('reportsdetails');
+Info = new Mongo.Collection('info');
+Sightings = new Mongo.Collection('sightings');
 BadData = new Mongo.Collection('baddata');
+
+
+
 
